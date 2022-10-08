@@ -50,9 +50,11 @@ def main():
         help="output separate title and URL, not org link format",
     )
     args = parser.parse_args()
-    db_path = os.path.join(expand_path("~/.mozilla/firefox"),
-                           get_default_moz_profile(),
-                           "places.sqlite")
+    db_path = os.path.join(
+        expand_path("~/.mozilla/firefox"),
+        get_default_moz_profile(),
+        "places.sqlite",
+    )
     bookmarks = get_toolbar_bookmarks(db_path)
     if args.clipboard:
         subprocess.run(
@@ -60,17 +62,27 @@ def main():
             # system) something seems to read the clipboard as soon as it's
             # updated, so "-loops 2" is required to keep xclip running until
             # the user pastes from the clipboard.
-        ["xclip", "-target", "UTF8_STRING", "-in", "-verbose",
-         "-selection", "clipboard", "-loops", "2"],
+            [
+                "xclip",
+                "-target",
+                "UTF8_STRING",
+                "-in",
+                "-verbose",
+                "-selection",
+                "clipboard",
+                "-loops",
+                "2",
+            ],
             check=True,
             encoding="utf-8",
-            input="".join(map(lambda b: b.to_org(split=args.split) + "\n",
-                              bookmarks))
+            input="".join(
+                map(lambda b: b.to_org(split=args.split) + "\n", bookmarks)
+            ),
         )
     else:
         for bookmark in bookmarks:
             print(bookmark.to_org(split=args.split))
-        
+
 
 def get_toolbar_bookmarks(db_path: str) -> List[Bookmark]:
     with tempfile.TemporaryDirectory() as tempdir:
@@ -104,7 +116,7 @@ def get_default_moz_profile():
             return config_dict["path"]
     return None
 
-        
+
 def expand_path(path):
     return os.path.expandvars(os.path.expanduser(path))
 
@@ -117,10 +129,10 @@ class Bookmark:
     def to_org(self, split=False):
         return (
             f"* {self.title}\n  {self.url}"
-            if split else
-            f"[[{self.url}][{self.title}]]"
+            if split
+            else f"[[{self.url}][{self.title}]]"
         )
 
-        
+
 if __name__ == "__main__":
     main()
