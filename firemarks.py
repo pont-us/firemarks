@@ -101,7 +101,6 @@ def get_default_moz_profile():
     for section in config_parser.sections():
         config_dict = config_parser[section]
         if "Name" in config_dict and config_dict["Name"] == "default-release":
-            print(config_dict["path"])
             return config_dict["path"]
     return None
 
