@@ -130,7 +130,7 @@ class Bookmark:
         return (
             f"* {self.title}\n  {self.url}"
             if split
-            else f"[[{self.url}][{self.title}]]"
+            else f"- [[{self.url}][{self.title}]]"
         )
 
 
