@@ -49,6 +49,13 @@ def main():
         action="store_true",
         help="output separate title and URL, not org link format",
     )
+    parser.add_argument(
+        "--filter",
+        "-f",
+        action="store",
+        type=str,
+        help="only output bookmarks containing given text",
+    )
     args = parser.parse_args()
     db_path = os.path.join(
         expand_path("~/.mozilla/firefox"),
@@ -56,6 +63,11 @@ def main():
         "places.sqlite",
     )
     bookmarks = get_toolbar_bookmarks(db_path)
+    bookmarks_filtered = (
+        filter(lambda b: b.contains(args.filter), bookmarks)
+        if args.filter is not None
+        else bookmarks
+    )
     if args.clipboard:
         subprocess.run(
             # "-loops 2" is specified because in practice (at least on my
@@ -76,11 +88,14 @@ def main():
             check=True,
             encoding="utf-8",
             input="".join(
-                map(lambda b: b.to_org(split=args.split) + "\n", bookmarks)
+                map(
+                    lambda b: b.to_org(split=args.split) + "\n",
+                    bookmarks_filtered,
+                )
             ),
         )
     else:
-        for bookmark in bookmarks:
+        for bookmark in bookmarks_filtered:
             print(bookmark.to_org(split=args.split))
 
 
@@ -126,11 +141,17 @@ class Bookmark:
     url: str
     title: str
 
-    def to_org(self, split=False):
+    def to_org(self, split: bool = False):
         return (
             f"* {self.title}\n  {self.url}"
             if split
             else f"- [[{self.url}][{self.title}]]"
+        )
+
+    def contains(self, text: str):
+        return (
+            text.lower() in self.url.lower()
+            or text.lower() in self.title.lower()
         )
 
 
