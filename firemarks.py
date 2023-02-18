@@ -56,13 +56,21 @@ def main():
         type=str,
         help="only output bookmarks containing given text",
     )
+    parser.add_argument(
+        "--folder",
+        "-d",
+        action="store",
+        type=str,
+        default='toolbar',
+        help="name of the bookmarks folder from which to read",
+    )
     args = parser.parse_args()
     db_path = os.path.join(
         expand_path("~/.mozilla/firefox"),
         get_default_moz_profile(),
         "places.sqlite",
     )
-    bookmarks = get_toolbar_bookmarks(db_path)
+    bookmarks = get_toolbar_bookmarks(db_path, args.folder)
     bookmarks_filtered = (
         filter(lambda b: b.contains(args.filter), bookmarks)
         if args.filter is not None
@@ -99,14 +107,14 @@ def main():
             print(bookmark.to_org(split=args.split))
 
 
-def get_toolbar_bookmarks(db_path: str) -> List[Bookmark]:
+def get_toolbar_bookmarks(db_path: str, title: str) -> List[Bookmark]:
     with tempfile.TemporaryDirectory() as tempdir:
         db_temp_path = os.path.join(tempdir, "places.sqlite")
         # Firefox locks the database so we work from a copy
         shutil.copy2(db_path, db_temp_path)
-        db = sqlite3.connect("file:" + db_temp_path + "?mode=ro", uri=True)
+        db = sqlite3.connect(f"file:{db_temp_path}?mode=ro", uri=True)
         cursor = db.cursor()
-        cursor.execute("SELECT id FROM moz_bookmarks WHERE title='toolbar'")
+        cursor.execute(f"SELECT id FROM moz_bookmarks WHERE title='{title}'")
         toolbar_id = list(cursor)[0][0]
         cursor.execute(
             f"SELECT moz_places.url, moz_bookmarks.title "
