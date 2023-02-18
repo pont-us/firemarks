@@ -104,7 +104,7 @@ def get_toolbar_bookmarks(db_path: str) -> List[Bookmark]:
         db_temp_path = os.path.join(tempdir, "places.sqlite")
         # Firefox locks the database so we work from a copy
         shutil.copy2(db_path, db_temp_path)
-        db = sqlite3.connect("file:" + db_temp_path + "?mode=ro")
+        db = sqlite3.connect("file:" + db_temp_path + "?mode=ro", uri=True)
         cursor = db.cursor()
         cursor.execute("SELECT id FROM moz_bookmarks WHERE title='toolbar'")
         toolbar_id = list(cursor)[0][0]
