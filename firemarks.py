@@ -66,13 +66,10 @@ def main():
         help="name of the bookmarks folder from which to read",
     )
     default_args = dict(
-        clipboard=False,
-        split=False,
-        filter=None,
-        folder="toolbar"
+        clipboard=False, split=False, filter=None, folder="toolbar"
     )
     try:
-        with open(pathlib.Path.home().joinpath('.firemarks.yaml'), 'r') as fh:
+        with open(pathlib.Path.home().joinpath(".firemarks.yaml"), "r") as fh:
             config_file_args = yaml.safe_load(fh)
     except FileNotFoundError:
         config_file_args = {}
