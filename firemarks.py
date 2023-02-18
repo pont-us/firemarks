@@ -30,9 +30,11 @@ import os
 import shutil
 import tempfile
 import configparser
+import pathlib
 import sqlite3
 import argparse
 import subprocess
+import yaml
 
 
 def main():
@@ -61,10 +63,22 @@ def main():
         "-d",
         action="store",
         type=str,
-        default='toolbar',
         help="name of the bookmarks folder from which to read",
     )
+    default_args = dict(
+        clipboard=False,
+        split=False,
+        filter=None,
+        folder="toolbar"
+    )
+    try:
+        with open(pathlib.Path.home().joinpath('.firemarks.yaml'), 'r') as fh:
+            config_file_args = yaml.safe_load(fh)
+    except FileNotFoundError:
+        config_file_args = {}
+    parser.set_defaults(**{**default_args, **config_file_args})
     args = parser.parse_args()
+    print(args.__dict__)
     db_path = os.path.join(
         expand_path("~/.mozilla/firefox"),
         get_default_moz_profile(),
