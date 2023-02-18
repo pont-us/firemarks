@@ -76,6 +76,9 @@ def main():
         if args.filter is not None
         else bookmarks
     )
+
+    for bookmark in bookmarks_filtered:
+        print(bookmark.to_org(split=args.split))
     if args.clipboard:
         subprocess.run(
             # "-loops 2" is specified because in practice (at least on my
@@ -102,9 +105,6 @@ def main():
                 )
             ),
         )
-    else:
-        for bookmark in bookmarks_filtered:
-            print(bookmark.to_org(split=args.split))
 
 
 def get_toolbar_bookmarks(db_path: str, title: str) -> List[Bookmark]:
