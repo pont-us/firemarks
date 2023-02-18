@@ -38,6 +38,23 @@ import yaml
 
 
 def main():
+    args = read_cli_arguments()
+    db_path = pathlib.Path.home().joinpath(
+        ".mozilla", "firefox", get_default_moz_profile(), "places.sqlite"
+    )
+    bookmarks = get_toolbar_bookmarks(db_path.as_posix(), args.folder)
+    bookmarks_filtered = list(
+        filter(lambda bm: bm.contains(args.filter), bookmarks)
+        if args.filter is not None
+        else bookmarks
+    )
+    for bookmark in bookmarks_filtered:
+        print(bookmark.to_org(split=args.split))
+    if args.clipboard:
+        run_xclip(bookmarks_filtered, args.split)
+
+
+def read_cli_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--clipboard",
@@ -74,48 +91,31 @@ def main():
     except FileNotFoundError:
         config_file_args = {}
     parser.set_defaults(**{**default_args, **config_file_args})
-    args = parser.parse_args()
-    print(args.__dict__)
-    db_path = os.path.join(
-        expand_path("~/.mozilla/firefox"),
-        get_default_moz_profile(),
-        "places.sqlite",
-    )
-    bookmarks = get_toolbar_bookmarks(db_path, args.folder)
-    bookmarks_filtered = (
-        filter(lambda b: b.contains(args.filter), bookmarks)
-        if args.filter is not None
-        else bookmarks
-    )
+    return parser.parse_args()
 
-    for bookmark in bookmarks_filtered:
-        print(bookmark.to_org(split=args.split))
-    if args.clipboard:
-        subprocess.run(
-            # "-loops 2" is specified because in practice (at least on my
-            # system) something seems to read the clipboard as soon as it's
-            # updated, so "-loops 2" is required to keep xclip running until
-            # the user pastes from the clipboard.
-            [
-                "xclip",
-                "-target",
-                "UTF8_STRING",
-                "-in",
-                "-verbose",
-                "-selection",
-                "clipboard",
-                "-loops",
-                "2",
-            ],
-            check=True,
-            encoding="utf-8",
-            input="".join(
-                map(
-                    lambda b: b.to_org(split=args.split) + "\n",
-                    bookmarks_filtered,
-                )
-            ),
-        )
+
+def run_xclip(bookmarks: List[Bookmark], split: bool):
+    subprocess.run(
+        # Note: with "-selection clipboard", "-loops 2" is needed because in
+        # practice (at least on my system) something seems to read the
+        # clipboard as soon as it's updated, so "-loops 2" is required to
+        # keep xclip running until the user pastes from the clipboard. With
+        # "-selection primary" this isn't needed.
+        [
+            "xclip",
+            "-target",
+            "UTF8_STRING",
+            "-in",
+            "-verbose",
+            "-selection",
+            "clipboard",
+            "-loops",
+            "2",
+        ],
+        check=True,
+        encoding="utf-8",
+        input="".join(map(lambda b: b.to_org(split=split) + "\n", bookmarks)),
+    )
 
 
 def get_toolbar_bookmarks(db_path: str, title: str) -> List[Bookmark]:
