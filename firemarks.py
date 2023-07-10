@@ -162,7 +162,7 @@ class Bookmark:
 
     def to_org(self, split: bool = False):
         return (
-            f"* {self.title}\n  {self.url}"
+            f"* {self.title}\n  [[{self.url}]]"
             if split
             else f"- [[{self.url}][{self.title}]]"
         )
