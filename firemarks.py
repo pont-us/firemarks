@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2022–2023 Pontus Lurcock
+# Copyright (c) 2022–2024 Pontus Lurcock
 
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the
@@ -34,6 +34,7 @@ import pathlib
 import sqlite3
 import argparse
 import subprocess
+import unicodedata
 import yaml
 
 
@@ -162,9 +163,9 @@ class Bookmark:
 
     def to_org(self, split: bool = False):
         return (
-            f"* {self.title}\n  [[{self.url}]]"
+            f"* {self.normtitle}\n  [[{self.url}]]"
             if split
-            else f"- [[{self.url}][{self.title}]]"
+            else f"- [[{self.url}][{self.normtitle}]]"
         )
 
     def contains(self, text: str):
@@ -172,6 +173,15 @@ class Bookmark:
             text.lower() in self.url.lower()
             or text.lower() in self.title.lower()
         )
+
+    @property
+    def normtitle(self):
+        """
+        Normalized title
+
+        Particularly useful for precomposing diacritics.
+        """
+        return unicodedata.normalize("NFC", self.title)
 
 
 if __name__ == "__main__":
