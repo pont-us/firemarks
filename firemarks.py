@@ -24,17 +24,20 @@
 """List bookmarks on the Firefox bookmarks toolbar as org-mode links"""
 
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import List
-import os
-import shutil
-import tempfile
-import configparser
-import pathlib
-import sqlite3
+
 import argparse
+import configparser
+import os
+import pathlib
+import re
+import shutil
+import sqlite3
 import subprocess
+import tempfile
 import unicodedata
+from dataclasses import dataclass
+from typing import List, Optional
+
 import yaml
 
 
@@ -45,7 +48,7 @@ def main():
     )
     bookmarks = get_toolbar_bookmarks(db_path.as_posix(), args.folder)
     bookmarks_filtered = list(
-        filter(lambda bm: bm.contains(args.filter), bookmarks)
+        filter(lambda bm: bm.matches(args.filter), bookmarks)
         if args.filter is not None
         else bookmarks
     )
@@ -74,7 +77,7 @@ def read_cli_arguments() -> argparse.Namespace:
         "-f",
         action="store",
         type=str,
-        help="only output bookmarks containing given text",
+        help="only output bookmarks matching given regular expression",
     )
     parser.add_argument(
         "--folder",
@@ -95,7 +98,7 @@ def read_cli_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def run_xclip(bookmarks: List[Bookmark], split: bool):
+def run_xclip(bookmarks: List[Bookmark], split: bool) -> None:
     subprocess.run(
         # Note: with "-selection clipboard", "-loops 2" is needed because in
         # practice (at least on my system) something seems to read the
@@ -137,7 +140,7 @@ def get_toolbar_bookmarks(db_path: str, title: str) -> List[Bookmark]:
         return [Bookmark(url, title) for url, title in cursor]
 
 
-def get_default_moz_profile():
+def get_default_moz_profile() -> Optional[str]:
     """Get the directory name of the default Firefox profile
 
     Works under Ubuntu 20.04 for standard Firefox from Ubuntu repos.
@@ -152,7 +155,7 @@ def get_default_moz_profile():
     return None
 
 
-def expand_path(path):
+def expand_path(path: str) -> str:
     return os.path.expandvars(os.path.expanduser(path))
 
 
@@ -161,21 +164,21 @@ class Bookmark:
     url: str
     title: str
 
-    def to_org(self, split: bool = False):
+    def to_org(self, split: bool = False) -> str:
         return (
             f"* {self.normtitle}\n  [[{self.url}]]"
             if split
             else f"- [[{self.url}][{self.normtitle}]]"
         )
 
-    def contains(self, text: str):
-        return (
-            text.lower() in self.url.lower()
-            or text.lower() in self.title.lower()
+    def matches(self, pattern: str) -> bool:
+        return any(
+            re.search(pattern, t, re.IGNORECASE)
+            for t in [self.url, self.title]
         )
 
     @property
-    def normtitle(self):
+    def normtitle(self) -> str:
         """
         Normalized title
 
