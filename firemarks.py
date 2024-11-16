@@ -53,7 +53,7 @@ def main():
         else bookmarks
     )
     for bookmark in bookmarks_filtered:
-        print(bookmark.to_org(split=args.split))
+        print(bookmark.to_org(style=args.style))
     if args.clipboard:
         run_xclip(bookmarks_filtered, args.split)
 
@@ -67,10 +67,11 @@ def read_cli_arguments() -> argparse.Namespace:
         help="write output to X clipboard, not standard output",
     )
     parser.add_argument(
-        "--split",
+        "--style",
         "-s",
-        action="store_true",
-        help="output separate title and URL, not org link format",
+        action="store",
+        type=str,
+        help="output style: unified (default), split, or plain",
     )
     parser.add_argument(
         "--filter",
@@ -87,7 +88,7 @@ def read_cli_arguments() -> argparse.Namespace:
         help="name of the bookmarks folder from which to read",
     )
     default_args = dict(
-        clipboard=False, split=False, filter=None, folder="toolbar"
+        clipboard=False, style="unified", filter=None, folder="toolbar"
     )
     try:
         with open(pathlib.Path.home().joinpath(".firemarks.yaml"), "r") as fh:
@@ -164,12 +165,15 @@ class Bookmark:
     url: str
     title: str
 
-    def to_org(self, split: bool = False) -> str:
-        return (
-            f"* {self.normtitle}\n  [[{self.url}]]"
-            if split
-            else f"- [[{self.url}][{self.normtitle}]]"
-        )
+    def to_org(self, style: str = "unified") -> str:
+        if style in {"plain", "p"}:
+            return self.url
+        elif style in {"split", "s"}:
+            return f"* {self.normtitle}\n  [[{self.url}]]"
+        elif style in {"unified", "u"}:
+            return f"- [[{self.url}][{self.normtitle}]]"
+        else:
+            raise ValueError(f'Unknown style "{style}"')
 
     def matches(self, pattern: str) -> bool:
         return any(
