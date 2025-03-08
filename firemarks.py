@@ -74,18 +74,18 @@ def read_cli_arguments() -> argparse.Namespace:
         help="output style: unified (default), split, or plain",
     )
     parser.add_argument(
-        "--filter",
-        "-f",
-        action="store",
-        type=str,
-        help="only output bookmarks matching given regular expression",
-    )
-    parser.add_argument(
         "--folder",
         "-d",
         action="store",
         type=str,
         help="name of the bookmarks folder from which to read",
+    )
+    parser.add_argument(
+        "filter",
+        action="store",
+        nargs="?",
+        type=str,
+        help="only output bookmarks matching given regular expression",
     )
     default_args = dict(
         clipboard=False, style="unified", filter=None, folder="toolbar"
